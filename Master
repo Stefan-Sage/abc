@@ -1,0 +1,38 @@
+$ACTION
+Case ACTION
+  When "CONTROLE" : Gosub CONTROLE
+  When "EXEC" : Gosub EXEC
+Endcase
+Return
+
+$CONTROLE
+If func AFNC.PARAM("TRSSTRDAT","")<>[00/00/00] &func AFNC.PARAM("TRSENDDAT","")<>[00/00/00]
+  If date$ < func AFNC.PARAM("TRSSTRDAT","") | date$ > func AFNC.PARAM("TRSENDDAT","")
+    GMESSAGE="AP/AR Closed" : FIN=1 : GERR=1 : Return
+  Endif
+Endif
+Return
+
+
+$EXEC
+
+  Gosub EXEC From PAYREMBAN
+  GPE=1
+  # Open the necessary tables
+  If !clalev([F:BAN9]) : Local File BANK     [BAN9] : Endif
+  If !clalev([F:PYH9]) : Local File PAYMENTH [PYH9] : Endif
+
+  For [F:PYH9] Where STA=9 & ZICNUM="" & ACCDAT >= [17/07/2020]
+    # Read the bank information
+    Read [F:BAN9]BAN0=[F:PYH9]BAN
+    # Check the bank information
+    If [F:BAN9]ZICBAN<>"" Then
+
+      #Call ECR_TRACE("PST_ICO" - [F:PYH9]NUM,0) From GESECRAN
+      # Create Intercompany Journal
+      Call PST_ICO([F:PYH9]NUM) From ZICB1
+
+    Endif
+  Next
+
+Return
